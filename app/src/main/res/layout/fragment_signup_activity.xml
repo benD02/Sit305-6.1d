@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SignupActivity"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Lets get you"
+        android:textSize="30dp"
+       />
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Setup!"
+        android:textSize="40dp"
+        android:layout_marginBottom="100dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center" >
+
+        <ImageView
+            android:id="@+id/imageViewProfile"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@mipmap/ic_launcher" /> <!-- Placeholder image -->
+
+        <Button
+            android:id="@+id/buttonSelectPicture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Picture" />
+
+        <EditText
+            android:id="@+id/suFullName"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Fullname" />
+        <EditText
+            android:id="@+id/suUsername"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Username" />
+        <EditText
+            android:id="@+id/suEmail"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Email" />
+        <EditText
+            android:id="@+id/suConfirmEmail"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Confirm Email" />
+        <EditText
+            android:id="@+id/suPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Password" />
+        <EditText
+            android:id="@+id/suConfirmPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Confirm Password" />
+
+        <Button
+            android:id="@+id/buttonConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next"/>
+
+
+
+
+
+    </LinearLayout>
+
+
+
+    </LinearLayout>

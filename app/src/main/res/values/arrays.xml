@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="interests_array">
+        <item>Algorithms</item>
+        <item>Data Structures</item>
+        <item>Web Development</item>
+        <item>Testing</item>
+        <item>Object oriented Programming</item>
+        <item>Internet Of Things</item>
+        <item>Logic Gates</item>
+        <item>Music</item>
+        <item>Movies </item>
+        <item>Art </item>
+        <item>Cars </item>
+    </string-array>
+</resources>

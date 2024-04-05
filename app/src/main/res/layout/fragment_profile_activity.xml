@@ -14,8 +14,15 @@
         android:text="Blank"
         android:textSize="20dp"/>
 
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_quiz_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
     <Button
         android:id="@+id/btnGenerate"
+        android:text="Generate Quiz"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 

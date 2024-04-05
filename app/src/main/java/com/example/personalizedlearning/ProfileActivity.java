@@ -7,6 +7,8 @@ import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,6 +32,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -39,6 +42,7 @@ public class ProfileActivity extends AppCompatActivity {
     private String stringURLEndPoint = "https://api.llama-api.com/chat/completions";
 
     private Button btnGenerate;
+    private RecyclerView recyclerView;
 
 
 
@@ -50,6 +54,13 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.fragment_profile_activity);
         textView = findViewById(R.id.textView);
         btnGenerate = findViewById(R.id.btnGenerate);
+
+        recyclerView = findViewById(R.id.rv_quiz_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        List<Quiz> quizzes = new ArrayList<>();
+        // Populate your quizzes list here...
+        QuizAdapter adapter = new QuizAdapter(quizzes, (QuizAdapter.OnQuizListener) this);
+        recyclerView.setAdapter(adapter);
 
         try {
             DatabaseHelper db = new DatabaseHelper(ProfileActivity.this);

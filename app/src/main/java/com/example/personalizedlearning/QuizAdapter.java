@@ -11,6 +11,7 @@ import java.util.List;
 public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
 
     private List<Quiz> quizList;
+
     private OnQuizListener onQuizListener;
 
     public QuizAdapter(List<Quiz> quizList, OnQuizListener onQuizListener) {
@@ -28,7 +29,9 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
     public void onBindViewHolder(ViewHolder holder, int position) {
         Quiz quiz = quizList.get(position);
         holder.quizName.setText(quiz.getQuizName());
+        holder.quizDescription.setText(quiz.getQuizDescription());
     }
+
 
     @Override
     public int getItemCount() {
@@ -37,15 +40,18 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public TextView quizName;
+        public TextView quizDescription;
         public Button startQuizButton;
         OnQuizListener onQuizListener;
 
         public ViewHolder(View itemView, OnQuizListener onQuizListener) {
             super(itemView);
             quizName = itemView.findViewById(R.id.quizName);
+            quizDescription = itemView.findViewById(R.id.quizDescription);
             startQuizButton = itemView.findViewById(R.id.startQuizButton);
             this.onQuizListener = onQuizListener;
             startQuizButton.setOnClickListener(this);
+
         }
 
         @Override

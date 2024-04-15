@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -59,25 +61,32 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        saveUsername(String.valueOf(suUsername));
+        // Assuming databaseHelper is already initialized
+        long userId = databaseHelper.addUser(fullName, username, email, password);
 
+        if (userId == -1) {
+            Toast.makeText(SignupActivity.this, "Signup failed. Please try again.", Toast.LENGTH_LONG).show();
+            Log.e("SignupActivity", "Failed to insert new user into the database.");
+            return; // Exit if the user could not be added
+        }
 
+        // Save the username in SharedPreferences after successful signup
+        saveUsername(username);
 
-
-        // Insert validation for the rest of the fields as needed
-
-        databaseHelper.addUser(fullName, username, email, password);
         Toast.makeText(SignupActivity.this, "Signup successful", Toast.LENGTH_SHORT).show();
 
+        // Proceed to the InterestActivity
         Intent intent = new Intent(SignupActivity.this, InterestActivity.class);
         startActivity(intent);
     }
 
-    public void saveUsername(String username) {
+
+    private void saveUsername(String username) {
         SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("Username", username);
         editor.apply();
+        Log.d("SignupActivity", "Username saved in SharedPreferences: " + username);
     }
 
 }

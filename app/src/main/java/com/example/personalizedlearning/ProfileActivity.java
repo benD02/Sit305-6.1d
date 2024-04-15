@@ -2,6 +2,7 @@ package com.example.personalizedlearning;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -25,6 +26,7 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,13 +38,26 @@ import java.util.List;
 import java.util.Map;
 
 
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends AppCompatActivity implements QuizAdapter.OnQuizListener {
     private TextView textView;
     private String stringToken = "LL-n7IhWNrPdXttzHN2GH3CgfuUaDNMpnHAGqBnc67uPQPPByO0A9VXq4ZskSES8cod";
     private String stringURLEndPoint = "https://api.llama-api.com/chat/completions";
 
     private Button btnGenerate;
     private RecyclerView recyclerView;
+    private List<Quiz> quizzes = new ArrayList<>(); // Class-level variable for quizzes
+    private QuizAdapter adapter;
+
+    public void onQuizClick(int position) {
+        Quiz clickedQuiz = quizzes.get(position);
+        Gson gson = new Gson();
+        String serializedQuiz = gson.toJson(clickedQuiz);
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, QuizFragment.newInstance(serializedQuiz))
+                .addToBackStack(null)
+                .commit();
+    }
 
 
 
@@ -54,36 +69,33 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.fragment_profile_activity);
         textView = findViewById(R.id.textView);
         btnGenerate = findViewById(R.id.btnGenerate);
-
         recyclerView = findViewById(R.id.rv_quiz_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        List<Quiz> quizzes = new ArrayList<>();
+        quizzes = new ArrayList<>(); // This initializes the class-level variable directly
         // Populate your quizzes list here...
-        QuizAdapter adapter = new QuizAdapter(quizzes, (QuizAdapter.OnQuizListener) this);
+        adapter = new QuizAdapter(quizzes, (QuizAdapter.OnQuizListener) this);
         recyclerView.setAdapter(adapter);
 
         try {
             DatabaseHelper db = new DatabaseHelper(ProfileActivity.this);
             String username = getUsername();
 
-            // Ensure username is not null or empty to avoid further errors
-            if(username == null || username.isEmpty()) {
-                Toast.makeText(this, "Username not found. Please login again.", Toast.LENGTH_LONG).show();
-                // Consider redirecting the user back to the login activity or handling this scenario appropriately
-                return; // Stop further execution
-            }
 
             int userId = db.getUserId(username);
             ArrayList<String> userInterests = db.getUserInterests(userId);
 
             String interestsString = TextUtils.join(", ", userInterests);
+            Log.d("topics", userInterests.toString());
 
             btnGenerate.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    Log.d("ProfileActivity", "Generate button clicked");
                     buttonLlamaAPI(v, interestsString);
                 }
             });
+
+
         } catch (Exception e) {
             Log.e("ProfileActivity", "Error fetching user interests, You may not have set any, remake your account", e);
             Toast.makeText(this, "Error fetching user details. You may not have set any, remake your account.", Toast.LENGTH_LONG).show();
@@ -93,76 +105,90 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
 
-
     public String getUsername() {
         SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
         return sharedPreferences.getString("Username", null); // Returns null if "Username" doesn't exist
     }
 
 
-    public void buttonLlamaAPI(View view, String interestsString)
-    {
-        Log.d("debug ", "Check 1");
-
-       String stringInputText  = "Create a 5-question multiple-choice quiz about the following topics " + interestsString + ". Include questions, four answer choices for each question, and highlight the correct answer.";
-        JSONObject jsonObject = new JSONObject();
-        JSONObject jsonObjectMessage = new JSONObject();
-        JSONArray jsonObjectMessageArray = new JSONArray();
-        try {
-            jsonObjectMessage.put("role", "user");
-            jsonObjectMessage.put("content", stringInputText);
-
-            jsonObjectMessageArray.put(0, jsonObjectMessage);
-            jsonObject.put("messages", jsonObjectMessageArray);
-
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
 
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST,
-                stringURLEndPoint,
-                jsonObject,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
 
-                            String stringOutput = response.getJSONArray("choices")
-                                    .getJSONObject(0)
-                                    .getJSONObject("message")
-                                    .getString("content");
+    public void buttonLlamaAPI(View view, String topic) {
+        String url = "http://10.0.2.2:5000/getQuiz?topic=" + Uri.encode(topic);
 
-                            textView.setText(stringOutput);
+        Log.d("topics", topic.toString());
 
-                        } catch (JSONException e) {
-                            throw new RuntimeException(e);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        // Process the response to construct quiz objects
+                        Log.d("API response", response.toString());
+                        Quiz newQuiz = processApiResponse(response, topic);  // Pass 'topic' here
+                        if (newQuiz != null) {
+                            updateQuizzes(newQuiz);  // Update your RecyclerView dataset
                         }
-
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getApplicationContext(), "Error parsing quiz data.", Toast.LENGTH_SHORT).show();
                     }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d("debug ", "Thrown an error");
-                textView.setText(error.toString());
-            }
-        }){
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> mapHeader = new HashMap<>();
-                mapHeader.put("Content-Type", "application/json");
-                mapHeader.put("Authorization", "Bearer " + stringToken);
-                return mapHeader;
-            }
-        };
-        int intTimeoutPeriod = 60000; //60 seconds
-        RetryPolicy retryPolicy = new DefaultRetryPolicy(intTimeoutPeriod,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+                }, error -> {
+            Log.e("API Error", "Error response from API", error);
+            Toast.makeText(getApplicationContext(), "Failed to fetch quiz. Please try again.", Toast.LENGTH_SHORT).show();
+        });
 
-        jsonObjectRequest.setRetryPolicy(retryPolicy);
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(
+                30000, // Timeout after 30 seconds
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+
+
         Volley.newRequestQueue(getApplicationContext()).add(jsonObjectRequest);
     }
+
+    private Quiz processApiResponse(JSONObject response, String topic) throws JSONException {
+        Gson gson = new Gson();
+        JSONArray quizzesArray = response.getJSONArray("quiz");
+        List<Question> questions = new ArrayList<>();
+
+        for (int i = 0; i < quizzesArray.length(); i++) {
+            JSONObject questionObject = quizzesArray.getJSONObject(i);
+            String questionText = questionObject.getString("question");
+            JSONArray optionsArray = questionObject.getJSONArray("options");
+            List<String> options = new ArrayList<>();
+            for (int j = 0; j < optionsArray.length(); j++) {
+                options.add(optionsArray.getString(j).trim());
+            }
+            String correctAnswerLetter = questionObject.getString("correct_answer").trim();
+            int correctAnswerIndex = correctAnswerLetter.charAt(0) - 'A';
+            if (correctAnswerIndex < 0 || correctAnswerIndex >= options.size()) {
+                Log.e("API Error", "Correct answer index out of bounds: " + correctAnswerIndex);
+                continue;
+            }
+            questions.add(new Question(questionText, options, correctAnswerIndex));
+        }
+        if (questions.isEmpty()) {
+            Log.e("ProfileActivity", "No questions parsed from API response");
+            return null;
+        }
+        Quiz quiz = new Quiz("Quiz on " + topic, "A quiz generated by the API on the topic of " + topic);
+        quiz.setQuestions(questions);
+        return quiz;
+    }
+
+
+
+    private void updateQuizzes(Quiz newQuiz) {
+        runOnUiThread(() -> {
+            quizzes.add(newQuiz);
+            Log.d("ProfileActivity", "Quiz added: " + newQuiz.getQuizName() + ", Total quizzes now: " + quizzes.size());
+            adapter = new QuizAdapter(quizzes, this); // Reinitialize the adapter
+            recyclerView.setAdapter(adapter); // Reset the adapter
+            Log.d("ProfileActivity", "Adapter fully reset with new data.");
+        });
+    }
+
 
 
 

@@ -49,7 +49,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
 
-    @SuppressLint("Range")
     public int getUserId(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
         int userId = -1; // Default to -1, indicating not found
@@ -58,22 +57,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String selection = COLUMN_USER_USERNAME + " = ?";
         String[] selectionArgs = {username};
 
-        Cursor cursor = db.query(TABLE_USERS, // The table to query
-                projection,   // The columns to return
-                selection,    // The columns for the WHERE clause
-                selectionArgs, // The values for the WHERE clause
-                null,         // don't group the rows
-                null,         // don't filter by row groups
-                null);        // The sort order
+        Log.d("DatabaseHelper", "Looking for username: " + username); // Log the username being searched
+
+        Cursor cursor = db.query(TABLE_USERS, projection, selection, selectionArgs, null, null, null);
 
         if (cursor.moveToFirst()) {
             userId = cursor.getInt(cursor.getColumnIndex(COLUMN_USER_ID));
+            Log.d("DatabaseHelper", "User found with ID: " + userId); // Log the found user ID
+        } else {
+            Log.d("DatabaseHelper", "User not found for username: " + username); // Log if user not found
         }
         cursor.close();
         db.close();
 
         return userId;
     }
+
 
 
 
@@ -118,23 +117,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " WHERE " + TABLE_USER_INTERESTS + "." + COLUMN_USER_ID_FK + "=?";
 
         Cursor cursor = db.rawQuery(QUERY, new String[]{String.valueOf(userId)});
-
-        int columnIndex = cursor.getColumnIndex(COLUMN_INTEREST_NAME);
-        if(columnIndex != -1) { // Ensures that the column index is valid
+        if (cursor != null) {
             if (cursor.moveToFirst()) {
                 do {
-                    String interest = cursor.getString(columnIndex);
+                    String interest = cursor.getString(cursor.getColumnIndex(COLUMN_INTEREST_NAME));
                     interests.add(interest);
+                    Log.d("DatabaseHelper", "Fetched interest: " + interest);
                 } while (cursor.moveToNext());
+                Log.d("DatabaseHelper", "Total interests fetched: " + interests.size());
+            } else {
+                Log.d("DatabaseHelper", "No interests found for user ID: " + userId);
             }
+            cursor.close();
         } else {
-            // Handle the case where COLUMN_INTEREST_NAME doesn't exist in your cursor
-            Log.e("DatabaseHelper", "Column " + COLUMN_INTEREST_NAME + " does not exist in the cursor.");
+            Log.e("DatabaseHelper", "Cursor is null. Query failed.");
         }
 
-        cursor.close();
         db.close();
-
         return interests;
     }
 
@@ -143,53 +142,71 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void addUserInterests(int userId, List<String> interests) {
         SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();  // Start transaction
+        try {
+            for (String interestName : interests) {
+                long interestId = getInterestId(db, interestName);
+                if (interestId == -1) {
+                    // Interest does not exist, insert it
+                    ContentValues interestValues = new ContentValues();
+                    interestValues.put(COLUMN_INTEREST_NAME, interestName);
+                    interestId = db.insert(TABLE_INTERESTS, null, interestValues);
+                }
 
-        for (String interestName : interests) {
-            long interestId = getInterestId(db, interestName);
-            if (interestId == -1) {
-                // Interest does not exist, insert it
-                ContentValues interestValues = new ContentValues();
-                interestValues.put(COLUMN_INTEREST_NAME, interestName);
-                interestId = db.insert(TABLE_INTERESTS, null, interestValues);
+                // Check if the user-interest link already exists to avoid duplicate entries
+                if (!isUserInterestLinkExists(db, userId, interestId)) {
+                    // Link user to the interest in the user_interests table
+                    ContentValues userInterestValues = new ContentValues();
+                    userInterestValues.put(COLUMN_USER_ID_FK, userId);
+                    userInterestValues.put(COLUMN_INTEREST_ID_FK, interestId);
+                    db.insert(TABLE_USER_INTERESTS, null, userInterestValues);
+                }
             }
-
-            // Link user to the interest in the user_interests table
-            ContentValues userInterestValues = new ContentValues();
-            userInterestValues.put(COLUMN_USER_ID_FK, userId);
-            userInterestValues.put(COLUMN_INTEREST_ID_FK, interestId);
-            db.insert(TABLE_USER_INTERESTS, null, userInterestValues);
+            db.setTransactionSuccessful();  // Mark the transaction as successful
+        } catch (Exception e) {
+            // Handle possible errors
+            Log.e("DatabaseHelper", "Error adding user interests", e);
+        } finally {
+            db.endTransaction();  // End transaction
+            db.close();
         }
-
-        db.close();
     }
 
+    private boolean isUserInterestLinkExists(SQLiteDatabase db, int userId, long interestId) {
+        Cursor cursor = db.query(TABLE_USER_INTERESTS, new String[]{"id"},
+                COLUMN_USER_ID_FK + "=? AND " + COLUMN_INTEREST_ID_FK + "=?", new String[]{String.valueOf(userId), String.valueOf(interestId)},
+                null, null, null);
+        boolean exists = cursor.getCount() > 0;
+        cursor.close();
+        return exists;
+    }
 
     private long getInterestId(SQLiteDatabase db, String interestName) {
         Cursor cursor = db.query(TABLE_INTERESTS, new String[]{COLUMN_INTEREST_ID},
                 COLUMN_INTEREST_NAME + " = ?", new String[]{interestName},
                 null, null, null);
-
+        long id = -1;
         if (cursor.moveToFirst()) {
-            long id = cursor.getLong(cursor.getColumnIndex(COLUMN_INTEREST_ID));
-            cursor.close();
-            return id;
-        } else {
-            cursor.close();
-            return -1; // Interest not found
+            id = cursor.getLong(cursor.getColumnIndex(COLUMN_INTEREST_ID));
         }
+        cursor.close();
+        return id;
     }
 
+
     // Example method to insert user into the database
-    public void addUser(String fullName, String username, String email, String password) {
+    public long addUser(String fullName, String username, String email, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_USER_FULLNAME, fullName);
         values.put(COLUMN_USER_USERNAME, username);
         values.put(COLUMN_USER_EMAIL, email);
         values.put(COLUMN_USER_PASSWORD, password);
-        db.insert(TABLE_USERS, null, values);
+        long userId = db.insert(TABLE_USERS, null, values);
         db.close();
+        return userId;  // Return the user ID of the new user or -1 if there was an error
     }
+
 
     // Example method to check user for login
     public boolean checkUser(String username, String password) {

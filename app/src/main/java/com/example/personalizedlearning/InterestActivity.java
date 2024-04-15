@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -45,20 +47,38 @@ public class InterestActivity extends AppCompatActivity {
                 selectedInterests.add((String) listViewInterests.getItemAtPosition(i));
             }
         }
-        DatabaseHelper db = new DatabaseHelper(InterestActivity.this);
+
+        if (selectedInterests.isEmpty()) {
+            Toast.makeText(this, "No interests selected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String username = getUsername();
+        if (username == null) {
+            Toast.makeText(this, "Username not found. Please login again.", Toast.LENGTH_LONG).show();
+            return; // Handle case where there is no username
+        }
+
+        DatabaseHelper db = new DatabaseHelper(InterestActivity.this);
         int userId = db.getUserId(username);
 
-        // Save to database (you'll need to implement this method)
-        DatabaseHelper databaseHelper = new DatabaseHelper(InterestActivity.this);
-        databaseHelper.addUserInterests(userId, selectedInterests); // Method to be implemented
+        if (userId == -1) {
+            Toast.makeText(this, "User not found.", Toast.LENGTH_LONG).show();
+            return; // Handle case where user is not found
+        }
+
+        db.addUserInterests(userId, selectedInterests);
 
         Toast.makeText(this, "Interests saved!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(InterestActivity.this, ProfileActivity.class);
         startActivity(intent);
     }
+
     public String getUsername() {
         SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("Username", null); // Returns null if "Username" doesn't exist
+        String username = sharedPreferences.getString("Username", null);
+        Log.d("InterestActivity", "Retrieved Username: " + username);
+        return username;
     }
+
 }

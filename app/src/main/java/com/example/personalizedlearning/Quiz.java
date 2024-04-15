@@ -8,7 +8,7 @@ public class Quiz implements Serializable {
     private String quizDescription;
     private List<Question> questions; // Ensure Question class is Serializable too
 
-    public Quiz(String quizName, String quizDescription) {
+    public Quiz(String quizName, String quizDescription, List<Question> questions) {
         this.quizName = quizName;
         this.quizDescription = quizDescription;
 

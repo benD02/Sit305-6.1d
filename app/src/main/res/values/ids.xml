@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="resultsTextView" type="id" />
+    <item name="retakeQuizButton" type="id" />
+    <item name="finishQuizButton" type="id" />
+</resources>

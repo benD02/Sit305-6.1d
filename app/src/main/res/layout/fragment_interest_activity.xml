@@ -2,6 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/background_colour"
+
     android:orientation="vertical">
 
     <ListView
@@ -9,6 +11,8 @@
         style="@style/Widget.AppCompat.Light.ListView.DropDown"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:textColor="@color/white"
+
         android:layout_weight="1"
         android:choiceMode="multipleChoice" />
 

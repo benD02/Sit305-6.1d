@@ -83,6 +83,8 @@ public class QuizActivity extends AppCompatActivity {
         // Update progress bar
     }
 
+
+
     public void loadQuizFromDatabase(int quizId) {
         DatabaseHelper db = new DatabaseHelper(this);
         currentQuiz = db.getQuizById(quizId);  // You would need to implement this method in DatabaseHelper
@@ -99,12 +101,13 @@ public class QuizActivity extends AppCompatActivity {
     private void checkAnswer(int selectedOptionIndex) {
         int correctAnswerIndex = currentQuiz.getQuestions().get(currentQuestionIndex).getCorrectAnswerIndex();
         if (selectedOptionIndex == correctAnswerIndex) {
+            correctAnswers++;  // Increment the count of correct answers
             Toast.makeText(this, "Correct!", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Wrong!", Toast.LENGTH_SHORT).show();
         }
 
-        // Move to next question or finish quiz
+        // Move to the next question or finish the quiz
         if (currentQuestionIndex < currentQuiz.getQuestions().size() - 1) {
             currentQuestionIndex++;
             displayCurrentQuestion();
@@ -113,8 +116,9 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
+
     private void finishQuiz() {
-        int totalQuestions = currentQuiz.getTotalQuestions();
+        int totalQuestions = currentQuiz.getQuestions().size(); // Assuming your Quiz class has a method getTotalQuestions()
         Toast.makeText(this, "Quiz Completed", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, ResultsActivity.class);
         intent.putExtra("userName", userName);
@@ -123,4 +127,5 @@ public class QuizActivity extends AppCompatActivity {
         startActivity(intent);
         finish(); // Close the activity
     }
+
 }

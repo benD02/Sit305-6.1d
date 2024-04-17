@@ -81,11 +81,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public long insertQuiz(int userId, String quizName, String topic, List<Question> questions) {
         SQLiteDatabase db = this.getWritableDatabase();
+
+        // Check if the quiz already exists
+        if (quizExists(db, userId, quizName, topic)) {
+            Log.d("DatabaseHelper", "Quiz already exists: " + quizName);
+            return -1; // Return -1 or the ID of the existing quiz if you want to update it instead
+        }
+
         ContentValues quizValues = new ContentValues();
         quizValues.put("user_id", userId);
         quizValues.put(COLUMN_QUIZ_NAME, quizName);
         quizValues.put(COLUMN_QUIZ_TOPIC, topic);
         long quizId = db.insert(TABLE_QUIZZES, null, quizValues);
+
+        if (quizId == -1) {
+            Log.e("DatabaseHelper", "Failed to insert quiz: " + quizName);
+            return -1;
+        }
 
         if (questions != null) {
             for (Question question : questions) {
@@ -102,6 +114,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return quizId;
     }
+
+    private boolean quizExists(SQLiteDatabase db, int userId, String quizName, String topic) {
+        String[] columns = { COLUMN_QUIZ_ID };
+        String selection = "user_id = ? AND quiz_name = ? AND quiz_topic = ?";
+        String[] selectionArgs = { String.valueOf(userId), quizName, topic };
+        Cursor cursor = db.query(TABLE_QUIZZES, columns, selection, selectionArgs, null, null, null);
+        boolean exists = cursor.moveToFirst();
+        cursor.close();
+        return exists;
+    }
+
+
 
     public List<Quiz> getAllQuizzes() {
         List<Quiz> quizzes = new ArrayList<>();
@@ -132,52 +156,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return quizzes;
     }
 
-    public List<Question> getQuestionsForQuiz(long quizId) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        List<Question> questions = new ArrayList<>();
-        String[] projection = {
-                COLUMN_QUESTION_ID,
-                COLUMN_QUESTION_TEXT,
-                COLUMN_OPTIONS,
-                COLUMN_CORRECT_ANSWER
-        };
-
-        Cursor cursor = db.query(
-                TABLE_QUESTIONS,           // The table to query
-                projection,                // The columns to return
-                COLUMN_QUIZ_FOREIGN_ID + " = ?",  // The columns for the WHERE clause
-                new String[] { String.valueOf(quizId) },  // The values for the WHERE clause
-                null,                      // group by
-                null,                      // having
-                null                       // order by
-        );
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                int questionTextIndex = cursor.getColumnIndex(COLUMN_QUESTION_TEXT);
-                int optionsIndex = cursor.getColumnIndex(COLUMN_OPTIONS);
-                int correctAnswerIndex = cursor.getColumnIndex(COLUMN_CORRECT_ANSWER);
-
-                if (questionTextIndex != -1 && optionsIndex != -1 && correctAnswerIndex != -1) {
-                    String questionText = cursor.getString(questionTextIndex);
-                    String optionsJson = cursor.getString(optionsIndex);
-                    int correctAnswer = cursor.getInt(correctAnswerIndex);
-
-                    // Convert the JSON string back to a list
-                    Type listType = new TypeToken<ArrayList<String>>() {}.getType();
-                    List<String> options = new Gson().fromJson(optionsJson, listType);
-
-                    questions.add(new Question(questionText, options, correctAnswer));
-                } else {
-                    // Log error or throw an exception
-                    Log.e("DatabaseHelper", "Column index not found");
-                }
-            }
-            cursor.close();
-        }
-        db.close();
-        return questions;
-    }
 
 
 
@@ -242,6 +220,51 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_INTERESTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER_INTERESTS);
         onCreate(db);
+    }
+
+
+    public List<Quiz> getQuizzesForUser(int userId) {
+        List<Quiz> quizzes = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] args = {String.valueOf(userId)};
+        Cursor cursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC},
+                "user_id = ?", args, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
+                String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
+                String topic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+                List<Question> questions = getQuestionsForQuiz(quizId);
+                quizzes.add(new Quiz(quizName, topic, questions));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return quizzes;
+    }
+
+    // Method to fetch questions for a specific quiz
+    public List<Question> getQuestionsForQuiz(long quizId) {
+        List<Question> questions = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_QUESTIONS, new String[]{COLUMN_QUESTION_ID, COLUMN_QUESTION_TEXT, COLUMN_OPTIONS, COLUMN_CORRECT_ANSWER},
+                COLUMN_QUIZ_FOREIGN_ID + " = ?", new String[]{String.valueOf(quizId)}, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            Type listType = new TypeToken<ArrayList<String>>(){}.getType();
+            Gson gson = new Gson();
+            do {
+                String questionText = cursor.getString(cursor.getColumnIndex(COLUMN_QUESTION_TEXT));
+                String optionsJson = cursor.getString(cursor.getColumnIndex(COLUMN_OPTIONS));
+                List<String> options = gson.fromJson(optionsJson, listType);
+                int correctAnswerIndex = cursor.getInt(cursor.getColumnIndex(COLUMN_CORRECT_ANSWER));
+                questions.add(new Question(questionText, options, correctAnswerIndex));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return questions;
     }
 
 

@@ -81,12 +81,20 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         }
         int userId = db.getUserId(username);
         userInterests = db.getUserInterests(userId);
-        if (userInterests.isEmpty()) {
-            Toast.makeText(this, "No interests defined. Please add some interests.", Toast.LENGTH_LONG).show();
-            return;
+        quizzes = db.getQuizzesForUser(userId);
+
+        if (quizzes.isEmpty()) {
+            if (userInterests.isEmpty()) {
+                Toast.makeText(this, "No interests defined. Please add some interests.", Toast.LENGTH_LONG).show();
+            } else {
+                btnGenerate.setOnClickListener(v -> generateQuiz());
+            }
+        } else {
+            adapter = new QuizAdapter(quizzes, this);
+            recyclerView.setAdapter(adapter);
         }
-        btnGenerate.setOnClickListener(v -> generateQuiz());
     }
+
 
     private void generateQuiz() {
         if (currentInterestIndex >= userInterests.size()) {
@@ -189,6 +197,9 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
             Toast.makeText(this, "Quiz data is incomplete.", Toast.LENGTH_SHORT).show();
         }
     }
+
+
+
 
 
     public String getUsername() {

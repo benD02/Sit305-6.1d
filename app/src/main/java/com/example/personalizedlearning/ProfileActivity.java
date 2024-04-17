@@ -57,6 +57,8 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         setContentView(R.layout.fragment_profile_activity);
         TextView usernameView = findViewById(R.id.tv_user);
         usernameView.setText(getUsername());
+
+
         initView();
         loadData();
     }

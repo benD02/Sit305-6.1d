@@ -16,8 +16,14 @@ import com.google.gson.Gson;
 import java.util.List;
 
 public class QuizActivity extends AppCompatActivity {
+
+    private String userName;
+
     private Quiz currentQuiz;
     private int currentQuestionIndex = 0;
+
+    private int correctAnswers = 0;
+
     private TextView questionTextView;
     private Button option1Button, option2Button, option3Button, option4Button;
     private ProgressBar progressBar;
@@ -70,10 +76,11 @@ public class QuizActivity extends AppCompatActivity {
             int finalI = i;
             optionButton.setOnClickListener(view -> checkAnswer(finalI));
             optionsLayout.addView(optionButton);
+            progressBar.setProgress((int) (((float) currentQuestionIndex / currentQuiz.getQuestions().size()) * 100));
+
         }
 
         // Update progress bar
-        progressBar.setProgress((int) (((float) currentQuestionIndex / currentQuiz.getQuestions().size()) * 100));
     }
 
     public void loadQuizFromDatabase(int quizId) {
@@ -107,7 +114,13 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void finishQuiz() {
+        int totalQuestions = currentQuiz.getTotalQuestions();
         Toast.makeText(this, "Quiz Completed", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, ResultsActivity.class);
+        intent.putExtra("userName", userName);
+        intent.putExtra("totalQuestions", totalQuestions);
+        intent.putExtra("correctAnswers", correctAnswers);
+        startActivity(intent);
         finish(); // Close the activity
     }
 }

@@ -23,6 +23,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".ResultsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.theme.ResultsActivity"
+            android:exported="false" />
+        <activity
             android:name=".QuizActivity"
             android:exported="false"
             android:label="@string/title_activity_quiz"

@@ -177,6 +177,7 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
             // Create an intent and start the QuizActivity
             Intent intent = new Intent(ProfileActivity.this, QuizActivity.class);
             intent.putExtra("quiz_data", serializedQuiz);
+            intent.putExtra("userName", getUsername());
             startActivity(intent);
         } else {
             // Log error and show a toast if the quiz has no questions

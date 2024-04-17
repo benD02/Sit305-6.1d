@@ -31,4 +31,7 @@ public class Quiz implements Serializable {
     public void setQuestions(List<Question> questions) {
         this.questions = questions;
     }
+    public int getTotalQuestions() {
+        return questions != null ? questions.size() : 0;
+    }
 }

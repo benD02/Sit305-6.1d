@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,34 +35,59 @@ public class QuizActivity extends AppCompatActivity {
         option4Button = findViewById(R.id.option4Button);
         progressBar = findViewById(R.id.progressBar);
 
-        // Get serialized quiz data from intent and deserialize it
         String quizData = getIntent().getStringExtra("quiz_data");
-        Gson gson = new Gson();
-        currentQuiz = gson.fromJson(quizData, Quiz.class);
-
-        if (currentQuiz != null && !currentQuiz.getQuestions().isEmpty()) {
-            displayCurrentQuestion();
-        } else {
-            Toast.makeText(this, "No questions available", Toast.LENGTH_SHORT).show();
-            finish();  // Close activity if no questions
+        if (quizData == null) {
+            Toast.makeText(this, "Quiz data is missing", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
+        currentQuiz = new Gson().fromJson(quizData, Quiz.class);
+
+        if (currentQuiz == null || currentQuiz.getQuestions() == null || currentQuiz.getQuestions().isEmpty()) {
+            Toast.makeText(this, "No questions available", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        displayCurrentQuestion();
+
     }
 
     private void displayCurrentQuestion() {
         Question currentQuestion = currentQuiz.getQuestions().get(currentQuestionIndex);
         questionTextView.setText(currentQuestion.getQuestionText());
-        List<String> options = currentQuestion.getAnswers();
+        List<String> options = currentQuestion.getOptions(); // Corrected from getAnswers() to getOptions()
 
-        // Set text on buttons and handle click events
-        Button[] buttons = {option1Button, option2Button, option3Button, option4Button};
+        // Assuming you have a layout that can dynamically add buttons
+        LinearLayout optionsLayout = findViewById(R.id.optionsRadioGroup);
+        optionsLayout.removeAllViews();  // Clear previous options
         for (int i = 0; i < options.size(); i++) {
-            buttons[i].setText(options.get(i));
-            buttons[i].setOnClickListener(view -> checkAnswer(i));
+            Button optionButton = new Button(this);
+            optionButton.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            optionButton.setText(options.get(i));
+            optionButton.setTextSize(16);
+            int finalI = i;
+            optionButton.setOnClickListener(view -> checkAnswer(finalI));
+            optionsLayout.addView(optionButton);
         }
 
         // Update progress bar
         progressBar.setProgress((int) (((float) currentQuestionIndex / currentQuiz.getQuestions().size()) * 100));
     }
+
+    public void loadQuizFromDatabase(int quizId) {
+        DatabaseHelper db = new DatabaseHelper(this);
+        currentQuiz = db.getQuizById(quizId);  // You would need to implement this method in DatabaseHelper
+        if (currentQuiz != null && !currentQuiz.getQuestions().isEmpty()) {
+            displayCurrentQuestion();
+        } else {
+            Toast.makeText(this, "Failed to load quiz or no questions available", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+    }
+
+
 
     private void checkAnswer(int selectedOptionIndex) {
         int correctAnswerIndex = currentQuiz.getQuestions().get(currentQuestionIndex).getCorrectAnswerIndex();

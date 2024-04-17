@@ -104,13 +104,34 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         try {
             Quiz newQuiz = processApiResponse(response, topic);
             if (newQuiz != null) {
-                quizzes.add(newQuiz);
-                adapter.notifyItemInserted(quizzes.size() - 1);
+                SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
+                String username = sharedPreferences.getString("Username", null);
+                if (username == null) {
+                    Toast.makeText(this, "User not found, please login again.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                DatabaseHelper db = new DatabaseHelper(this);
+                int userId = db.getUserId(username);  // Make sure this method correctly fetches the user ID
+                if (userId == -1) {
+                    Toast.makeText(this, "Failed to locate user in database.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                long quizId = db.insertQuiz(userId, newQuiz.getQuizName(), topic, newQuiz.getQuestions());
+                if (quizId == -1) {
+                    Toast.makeText(this, "Failed to insert quiz into the database.", Toast.LENGTH_LONG).show();
+                } else {
+                    quizzes.add(newQuiz);
+                    adapter.notifyItemInserted(quizzes.size() - 1);
+                }
             }
         } catch (JSONException e) {
             Toast.makeText(getApplicationContext(), "Error parsing quiz data.", Toast.LENGTH_SHORT).show();
+            Log.e("ProfileActivity", "JSON parsing error: " + e.getMessage());
         }
     }
+
 
     private void handleError(VolleyError error) {
         Toast.makeText(getApplicationContext(), "Failed to fetch quiz. Please try again.", Toast.LENGTH_SHORT).show();
@@ -144,13 +165,24 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
     }
 
     public void onQuizClick(int position) {
-        Quiz clickedQuiz = quizzes.get(position);
-        Gson gson = new Gson();
-        String serializedQuiz = gson.toJson(clickedQuiz);
+        Log.d("ProfileActivity", "Quiz clicked at position: " + position);
 
-        Intent intent = new Intent(ProfileActivity.this, QuizActivity.class);
-        intent.putExtra("quiz_data", serializedQuiz);
-        startActivity(intent);
+        Quiz clickedQuiz = quizzes.get(position);
+        if (clickedQuiz != null && clickedQuiz.getQuestions() != null && !clickedQuiz.getQuestions().isEmpty()) {
+            // Serialize the Quiz object to pass it via intent
+            Gson gson = new Gson();
+            String serializedQuiz = gson.toJson(clickedQuiz);
+            Log.d("ProfileActivity", "Serialized Quiz Data: " + serializedQuiz);
+
+            // Create an intent and start the QuizActivity
+            Intent intent = new Intent(ProfileActivity.this, QuizActivity.class);
+            intent.putExtra("quiz_data", serializedQuiz);
+            startActivity(intent);
+        } else {
+            // Log error and show a toast if the quiz has no questions
+            Log.e("ProfileActivity", "No questions available in the quiz at position: " + position);
+            Toast.makeText(this, "Quiz data is incomplete.", Toast.LENGTH_SHORT).show();
+        }
     }
 
 

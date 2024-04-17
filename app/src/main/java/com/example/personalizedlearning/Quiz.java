@@ -11,7 +11,7 @@ public class Quiz implements Serializable {
     public Quiz(String quizName, String quizDescription, List<Question> questions) {
         this.quizName = quizName;
         this.quizDescription = quizDescription;
-
+        this.questions = questions; // Assign the questions passed to the constructor to the field
     }
 
     // Getters

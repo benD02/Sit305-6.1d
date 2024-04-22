@@ -83,6 +83,8 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         userInterests = db.getUserInterests(userId);
         quizzes = db.getQuizzesForUser(userId);
 
+        updateQuizCountView();
+
         if (quizzes.isEmpty()) {
             if (userInterests.isEmpty()) {
                 Toast.makeText(this, "No interests defined. Please add some interests.", Toast.LENGTH_LONG).show();
@@ -95,6 +97,13 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         }
     }
 
+    private void updateQuizCountView() {
+        DatabaseHelper db = new DatabaseHelper(this);
+        int userId = db.getUserId(getUsername());
+        int incompleteCount = db.getIncompleteQuizCount(userId);
+        TextView taskDueTextView = findViewById(R.id.tv_task_due);
+        taskDueTextView.setText("You have " + incompleteCount + " tasks due");
+    }
 
     private void generateQuiz() {
         if (currentInterestIndex >= userInterests.size()) {
@@ -198,6 +207,12 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         }
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadData();  // Refresh the data to reflect any changes made while the activity was paused or stopped
+    }
 
 
 

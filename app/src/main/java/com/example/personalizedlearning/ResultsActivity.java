@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -40,12 +41,30 @@ public class ResultsActivity extends AppCompatActivity {
         finishQuizButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Redirect to ProfileActivity instead of closing the app
-                Intent intent = new Intent(ResultsActivity.this, ProfileActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-                finish();
+                int quizId = getIntent().getIntExtra("quizId", -1);  // Retrieve the passed quiz ID
+                if (quizId != -1) {
+                    markCompletedAndShowResults(quizId);  // Call the method to mark the quiz as completed
+                } else {
+                    Toast.makeText(ResultsActivity.this, "Error: Quiz ID not found.", Toast.LENGTH_SHORT).show();
+                    // Handle the error appropriately
+                }
             }
         });
+
     }
+
+    public void markCompletedAndShowResults(int quizId) {
+        DatabaseHelper db = new DatabaseHelper(this);
+        db.markQuizAsCompleted(quizId);  // Mark the quiz as completed in the database
+
+        Toast.makeText(this, "Quiz marked as completed.", Toast.LENGTH_SHORT).show();
+
+        // Optionally refresh the activity or return to the profile with updated data
+        Intent intent = new Intent(this, ProfileActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+
 }

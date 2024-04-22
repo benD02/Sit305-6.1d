@@ -34,6 +34,20 @@
     </LinearLayout>
 
 
+    <TextView
+        android:id="@+id/tv_task_due"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/banner_background"
+        android:padding="8dp"
+        android:text="you have 0 tasks due"
+        android:textStyle="bold"
+        android:drawableStart="@drawable/baseline_notifications_24"
+        android:textColor="@color/black"
+        android:textSize="20dp" />
+
+
     <LinearLayout
         android:layout_width="356dp"
         android:layout_height="wrap_content"

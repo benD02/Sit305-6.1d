@@ -43,12 +43,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_QUESTION_TEXT = "question_text";
     private static final String COLUMN_CORRECT_ANSWER = "correct_answer";
     private static final String COLUMN_OPTIONS = "options";  // This could be a JSON string of options
+    private static final String COLUMN_QUIZ_COMPLETED = "completed";
 
     private static final String CREATE_QUIZZES_TABLE = "CREATE TABLE " + TABLE_QUIZZES + "("
             + COLUMN_QUIZ_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + "user_id INTEGER,"  // Associate each quiz with a user
             + COLUMN_QUIZ_NAME + " TEXT,"
             + COLUMN_QUIZ_TOPIC + " TEXT,"
+            + COLUMN_QUIZ_COMPLETED + " INTEGER DEFAULT 0,"
             + "FOREIGN KEY(user_id) REFERENCES " + TABLE_USERS + "(user_id)" + ")";
 
     private static final String CREATE_QUESTIONS_TABLE = "CREATE TABLE " + TABLE_QUESTIONS + "("
@@ -221,6 +223,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER_INTERESTS);
         onCreate(db);
     }
+
+    public void markQuizAsCompleted(int quizId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_QUIZ_COMPLETED, 1);  // Mark as completed
+        db.update(TABLE_QUIZZES, values, COLUMN_QUIZ_ID + " = ?", new String[]{String.valueOf(quizId)});
+        db.close();
+    }
+
+    public int getIncompleteQuizCount(int userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_QUIZZES +
+                        " WHERE user_id = ? AND " + COLUMN_QUIZ_COMPLETED + " = 0",
+                new String[]{String.valueOf(userId)});
+        int count = 0;
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return count;
+    }
+
+
 
 
     public List<Quiz> getQuizzesForUser(int userId) {

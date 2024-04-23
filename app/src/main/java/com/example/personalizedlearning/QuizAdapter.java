@@ -19,6 +19,12 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
         this.onQuizListener = onQuizListener;
     }
 
+    public void setQuizzes(List<Quiz> newQuizzes) {
+        this.quizList = newQuizzes;
+        notifyDataSetChanged();  // Notify any registered observers that the data set has changed.
+    }
+
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.quiz_item, parent, false);

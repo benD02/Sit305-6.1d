@@ -19,6 +19,9 @@ public class QuizActivity extends AppCompatActivity {
 
     private String userName;
 
+    private int quizId; // Add this to store quiz ID
+
+
     private Quiz currentQuiz;
     private int currentQuestionIndex = 0;
 
@@ -40,6 +43,9 @@ public class QuizActivity extends AppCompatActivity {
         option3Button = findViewById(R.id.option3Button);
         option4Button = findViewById(R.id.option4Button);
         progressBar = findViewById(R.id.progressBar);
+
+        quizId = getIntent().getIntExtra("quizId", -1);  // Defaulting to -1 if not found
+
 
         String quizData = getIntent().getStringExtra("quiz_data");
         if (quizData == null) {
@@ -124,6 +130,7 @@ public class QuizActivity extends AppCompatActivity {
         intent.putExtra("userName", userName);
         intent.putExtra("totalQuestions", totalQuestions);
         intent.putExtra("correctAnswers", correctAnswers);
+        intent.putExtra("quizId", quizId);  // Make sure this is the correct quiz ID
         startActivity(intent);
         finish(); // Close the activity
     }

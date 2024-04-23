@@ -50,15 +50,10 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
     private QuizAdapter adapter;
     private int currentInterestIndex = 0;
     private ArrayList<String> userInterests;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_profile_activity);
-        TextView usernameView = findViewById(R.id.tv_user);
-        usernameView.setText(getUsername());
-
-
         initView();
         loadData();
     }
@@ -80,29 +75,33 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
             return;
         }
         int userId = db.getUserId(username);
+        if (userId == -1) {
+            Toast.makeText(this, "User ID not found for username: " + username, Toast.LENGTH_LONG).show();
+            return;
+        }
         userInterests = db.getUserInterests(userId);
         quizzes = db.getQuizzesForUser(userId);
-
-        updateQuizCountView();
-
         if (quizzes.isEmpty()) {
-            if (userInterests.isEmpty()) {
-                Toast.makeText(this, "No interests defined. Please add some interests.", Toast.LENGTH_LONG).show();
-            } else {
-                btnGenerate.setOnClickListener(v -> generateQuiz());
-            }
+            Log.d("ProfileActivity", "No quizzes found for user ID: " + userId);
+            Toast.makeText(this, "No quizzes available. Start by generating new quizzes.", Toast.LENGTH_LONG).show();
         } else {
-            adapter = new QuizAdapter(quizzes, this);
-            recyclerView.setAdapter(adapter);
+            adapter.setQuizzes(quizzes);  // Make sure your adapter has a method to update its data
+            adapter.notifyDataSetChanged();
         }
+        updateQuizCountView();
     }
 
     private void updateQuizCountView() {
         DatabaseHelper db = new DatabaseHelper(this);
-        int userId = db.getUserId(getUsername());
-        int incompleteCount = db.getIncompleteQuizCount(userId);
-        TextView taskDueTextView = findViewById(R.id.tv_task_due);
-        taskDueTextView.setText("You have " + incompleteCount + " tasks due");
+        String username = getUsername();
+        int userId = db.getUserId(username);
+        if (userId != -1) {
+            int incompleteCount = db.getIncompleteQuizCount(userId);
+            TextView taskDueTextView = findViewById(R.id.tv_task_due);
+            taskDueTextView.setText("You have " + incompleteCount + " tasks due");
+        } else {
+            Log.e("ProfileActivity", "Failed to fetch user ID for updating quiz count.");
+        }
     }
 
     private void generateQuiz() {
@@ -125,24 +124,16 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
         try {
             Quiz newQuiz = processApiResponse(response, topic);
             if (newQuiz != null) {
+                DatabaseHelper db = new DatabaseHelper(this);
                 SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);
                 String username = sharedPreferences.getString("Username", null);
-                if (username == null) {
-                    Toast.makeText(this, "User not found, please login again.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                DatabaseHelper db = new DatabaseHelper(this);
-                int userId = db.getUserId(username);  // Make sure this method correctly fetches the user ID
-                if (userId == -1) {
-                    Toast.makeText(this, "Failed to locate user in database.", Toast.LENGTH_LONG).show();
-                    return;
-                }
+                int userId = db.getUserId(username);
 
                 long quizId = db.insertQuiz(userId, newQuiz.getQuizName(), topic, newQuiz.getQuestions());
                 if (quizId == -1) {
                     Toast.makeText(this, "Failed to insert quiz into the database.", Toast.LENGTH_LONG).show();
                 } else {
+                    newQuiz.setQuizId((int) quizId);  // Cast long to int, assuming ID fits into int
                     quizzes.add(newQuiz);
                     adapter.notifyItemInserted(quizzes.size() - 1);
                 }
@@ -152,7 +143,6 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
             Log.e("ProfileActivity", "JSON parsing error: " + e.getMessage());
         }
     }
-
 
     private void handleError(VolleyError error) {
         Toast.makeText(getApplicationContext(), "Failed to fetch quiz. Please try again.", Toast.LENGTH_SHORT).show();
@@ -182,40 +172,33 @@ public class ProfileActivity extends AppCompatActivity implements QuizAdapter.On
             Log.e("ProfileActivity", "No questions parsed from API response");
             return null;
         }
-        return new Quiz("Quiz on " + topic, "A quiz generated by the API on the topic of " + topic, questions);
+        return new Quiz(-1, "Quiz on " + topic, "A quiz generated by the API on the topic of " + topic, questions);
     }
 
+    @Override
     public void onQuizClick(int position) {
         Log.d("ProfileActivity", "Quiz clicked at position: " + position);
 
         Quiz clickedQuiz = quizzes.get(position);
         if (clickedQuiz != null && clickedQuiz.getQuestions() != null && !clickedQuiz.getQuestions().isEmpty()) {
-            // Serialize the Quiz object to pass it via intent
             Gson gson = new Gson();
             String serializedQuiz = gson.toJson(clickedQuiz);
-            Log.d("ProfileActivity", "Serialized Quiz Data: " + serializedQuiz);
 
-            // Create an intent and start the QuizActivity
             Intent intent = new Intent(ProfileActivity.this, QuizActivity.class);
             intent.putExtra("quiz_data", serializedQuiz);
+            intent.putExtra("quizId", clickedQuiz.getQuizId());  // Passing the quiz ID to QuizActivity
             intent.putExtra("userName", getUsername());
             startActivity(intent);
         } else {
-            // Log error and show a toast if the quiz has no questions
-            Log.e("ProfileActivity", "No questions available in the quiz at position: " + position);
             Toast.makeText(this, "Quiz data is incomplete.", Toast.LENGTH_SHORT).show();
         }
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
-        loadData();  // Refresh the data to reflect any changes made while the activity was paused or stopped
+        loadData();  // Refresh the data to reflect any changes
     }
-
-
-
 
     public String getUsername() {
         SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE);

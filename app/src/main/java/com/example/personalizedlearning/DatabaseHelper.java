@@ -17,7 +17,7 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "UserDB";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3; // previously was 2
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
     private static final String COLUMN_USER_FULLNAME = "full_name";
@@ -134,29 +134,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_QUIZZES, null);
         if (cursor.moveToFirst()) {
-            int idIndex = cursor.getColumnIndex(COLUMN_QUIZ_ID);
-            int nameIndex = cursor.getColumnIndex(COLUMN_QUIZ_NAME);
-            int topicIndex = cursor.getColumnIndex(COLUMN_QUIZ_TOPIC);
-
-            if (idIndex == -1 || nameIndex == -1 || topicIndex == -1) {
-                Log.e("DatabaseHelper", "One or more column indices not found");
-                cursor.close();
-                db.close();
-                return quizzes; // Return empty or handle error accordingly
-            }
-
             do {
-                long quizId = cursor.getLong(idIndex);
-                String quizName = cursor.getString(nameIndex);
-                String topic = cursor.getString(topicIndex);
+                int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
+                String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
+                String quizTopic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                quizzes.add(new Quiz(quizName, topic, questions));
+                quizzes.add(new Quiz(quizId, quizName, quizTopic, questions));  // Updated to include quizId
             } while (cursor.moveToNext());
         }
         cursor.close();
         db.close();
         return quizzes;
     }
+
 
 
 
@@ -262,7 +252,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
                 String topic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                quizzes.add(new Quiz(quizName, topic, questions));
+                // Correctly pass quizId to the Quiz constructor
+                quizzes.add(new Quiz(quizId, quizName, topic, questions));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -428,15 +419,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 null, null, null);
 
         if (quizCursor.moveToFirst()) {
+            int retrievedQuizId = quizCursor.getInt(quizCursor.getColumnIndex(COLUMN_QUIZ_ID));  // Retrieve the quiz ID
             String quizName = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_NAME));
             String quizTopic = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
-            List<Question> questions = getQuestionsForQuiz(quizId);  // Assuming you already have this method implemented
+            List<Question> questions = getQuestionsForQuiz(retrievedQuizId);  // Retrieve questions associated with the quiz
 
-            quiz = new Quiz(quizName, quizTopic, questions);
+            // Create a new Quiz object with all details
+            quiz = new Quiz(retrievedQuizId, quizName, quizTopic, questions);
         }
         quizCursor.close();
         db.close();
-        return quiz;
+        return quiz;  // Return the Quiz object or null if not found
     }
 
 

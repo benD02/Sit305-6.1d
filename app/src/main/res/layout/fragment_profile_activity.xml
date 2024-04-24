@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,25 +12,37 @@
     <LinearLayout
         android:layout_width="268dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="60dp"
-        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/textView"
-            android:textColor="@color/white"
-            android:layout_width="match_parent"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="268dp"
             android:layout_height="wrap_content"
-            android:text="Hello,"
-            android:textSize="40dp" />
+            android:layout_marginBottom="60dp"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tv_user"
-            android:textColor="@color/white"
+            <TextView
+                android:id="@+id/textView"
+                android:textColor="@color/white"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hello,"
+                android:textSize="40dp" />
 
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="user"
-            android:textSize="40dp" />
+            <TextView
+                android:id="@+id/tv_user"
+                android:textColor="@color/white"
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="user"
+                android:textSize="40dp" />
+
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/profile_picture"
+            android:layout_width="100dp"
+            android:layout_height="100dp"/>
 
     </LinearLayout>
 
@@ -38,7 +51,7 @@
         android:id="@+id/tv_task_due"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="20dp"
         android:background="@drawable/banner_background"
         android:padding="8dp"
         android:text="you have 0 tasks due"
@@ -46,6 +59,18 @@
         android:drawableStart="@drawable/baseline_notifications_24"
         android:textColor="@color/black"
         android:textSize="20dp" />
+
+    <Button
+        android:id="@+id/btnRefreshQuizzes"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text="Refresh Quizzes"
+        android:gravity="start|center_vertical"
+        android:textColor="@color/white"
+        app:icon="@drawable/baseline_refresh_24" />
+
 
 
     <LinearLayout

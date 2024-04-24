@@ -17,7 +17,7 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "UserDB";
-    private static final int DATABASE_VERSION = 3; // previously was 2
+    private static final int DATABASE_VERSION = 4;
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
     private static final String COLUMN_USER_FULLNAME = "full_name";
@@ -45,6 +45,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_OPTIONS = "options";  // This could be a JSON string of options
     private static final String COLUMN_QUIZ_COMPLETED = "completed";
 
+    private static final String COLUMN_USER_IMAGE = "user_image";
+
+
     private static final String CREATE_QUIZZES_TABLE = "CREATE TABLE " + TABLE_QUIZZES + "("
             + COLUMN_QUIZ_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + "user_id INTEGER,"  // Associate each quiz with a user
@@ -71,9 +74,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     private static final String CREATE_USER_TABLE = "CREATE TABLE " + TABLE_USERS + "("
-            + COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_USER_FULLNAME + " TEXT,"
-            + COLUMN_USER_USERNAME + " TEXT," + COLUMN_USER_EMAIL + " TEXT,"
-            + COLUMN_USER_PASSWORD + " TEXT" + ")";
+            + COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+            + COLUMN_USER_FULLNAME + " TEXT,"
+            + COLUMN_USER_USERNAME + " TEXT,"
+            + COLUMN_USER_EMAIL + " TEXT,"
+            + COLUMN_USER_PASSWORD + " TEXT,"
+            + COLUMN_USER_IMAGE + " TEXT" + ");";
+
+
 
 
     private static final String CREATE_TABLE_INTERESTS = "CREATE TABLE " + TABLE_INTERESTS + "("
@@ -87,7 +95,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Check if the quiz already exists
         if (quizExists(db, userId, quizName, topic)) {
             Log.d("DatabaseHelper", "Quiz already exists: " + quizName);
-            return -1; // Return -1 or the ID of the existing quiz if you want to update it instead
+            return -1;
         }
 
         ContentValues quizValues = new ContentValues();
@@ -138,8 +146,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
                 String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
                 String quizTopic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+                boolean isCompleted = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                quizzes.add(new Quiz(quizId, quizName, quizTopic, questions));  // Updated to include quizId
+                quizzes.add(new Quiz(quizId, quizName, quizTopic, questions, isCompleted));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -243,7 +252,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Quiz> quizzes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         String[] args = {String.valueOf(userId)};
-        Cursor cursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC},
+        Cursor cursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC, COLUMN_QUIZ_COMPLETED},
                 "user_id = ?", args, null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -251,15 +260,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
                 String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
                 String topic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+                boolean isCompleted = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                // Correctly pass quizId to the Quiz constructor
-                quizzes.add(new Quiz(quizId, quizName, topic, questions));
+                quizzes.add(new Quiz(quizId, quizName, topic, questions, isCompleted));
             } while (cursor.moveToNext());
         }
         cursor.close();
         db.close();
         return quizzes;
     }
+
 
     // Method to fetch questions for a specific quiz
     public List<Question> getQuestionsForQuiz(long quizId) {
@@ -328,7 +338,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             for (String interestName : interests) {
                 long interestId = getInterestId(db, interestName);
                 if (interestId == -1) {
-                    // Interest does not exist, insert it
                     ContentValues interestValues = new ContentValues();
                     interestValues.put(COLUMN_INTEREST_NAME, interestName);
                     interestId = db.insert(TABLE_INTERESTS, null, interestValues);
@@ -381,20 +390,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     // Example method to insert user into the database
-    public long addUser(String fullName, String username, String email, String password) {
+    public long addUser(String fullName, String username, String email, String password, String imagePath) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_USER_FULLNAME, fullName);
         values.put(COLUMN_USER_USERNAME, username);
         values.put(COLUMN_USER_EMAIL, email);
         values.put(COLUMN_USER_PASSWORD, password);
+        values.put(COLUMN_USER_IMAGE, imagePath);
         long userId = db.insert(TABLE_USERS, null, values);
         db.close();
         return userId;  // Return the user ID of the new user or -1 if there was an error
     }
 
 
-    // Example method to check user for login
     public boolean checkUser(String username, String password) {
         String[] columns = {
                 COLUMN_USER_ID
@@ -413,24 +422,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Quiz quiz = null;
 
-        // Query to get the Quiz details
-        Cursor quizCursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC},
-                COLUMN_QUIZ_ID + " = ?", new String[]{String.valueOf(quizId)},
+        // Query to get the Quiz details, including the completion status
+        Cursor quizCursor = db.query(TABLE_QUIZZES,
+                new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC, COLUMN_QUIZ_COMPLETED},
+                COLUMN_QUIZ_ID + " = ?",
+                new String[]{String.valueOf(quizId)},
                 null, null, null);
 
         if (quizCursor.moveToFirst()) {
             int retrievedQuizId = quizCursor.getInt(quizCursor.getColumnIndex(COLUMN_QUIZ_ID));  // Retrieve the quiz ID
             String quizName = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_NAME));
             String quizTopic = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+            boolean isCompleted = quizCursor.getInt(quizCursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;  // Retrieve the completion status
             List<Question> questions = getQuestionsForQuiz(retrievedQuizId);  // Retrieve questions associated with the quiz
 
-            // Create a new Quiz object with all details
-            quiz = new Quiz(retrievedQuizId, quizName, quizTopic, questions);
+            // Create a new Quiz object with all details including the completion status
+            quiz = new Quiz(retrievedQuizId, quizName, quizTopic, questions, isCompleted);
         }
         quizCursor.close();
         db.close();
         return quiz;  // Return the Quiz object or null if not found
     }
+
+    public String getUserImage(int userId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String imagePath = null;
+        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_USER_IMAGE}, COLUMN_USER_ID + " = ?",
+                new String[]{String.valueOf(userId)}, null, null, null);
+        if (cursor.moveToFirst()) {
+            imagePath = cursor.getString(cursor.getColumnIndex(COLUMN_USER_IMAGE));
+        }
+        cursor.close();
+        db.close();
+        return imagePath;
+    }
+
 
 
 

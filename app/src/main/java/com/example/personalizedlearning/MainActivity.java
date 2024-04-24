@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
             saveUsername(username);
             Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            intent.putExtra("USERNAME", username);  // Pass the username as an intent extra
             startActivity(intent);
         } else {
             // User does not exist, show error message

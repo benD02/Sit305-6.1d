@@ -8,13 +8,13 @@
 
     <ListView
         android:id="@+id/listViewInterests"
-        style="@style/Widget.AppCompat.Light.ListView.DropDown"
+        style="@style/Widget.AppCompat.ListView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:textColor="@color/white"
-
         android:layout_weight="1"
-        android:choiceMode="multipleChoice" />
+
+        android:choiceMode="multipleChoice"
+        android:textColor="@color/white" />
 
     <Button
         android:id="@+id/buttonComplete"

@@ -3,13 +3,17 @@ package com.example.personalizedlearning;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class SignupActivity extends AppCompatActivity {
@@ -18,11 +22,14 @@ public class SignupActivity extends AppCompatActivity {
     private Button buttonConfirm;
     private DatabaseHelper databaseHelper;
 
+    private ImageView imageViewProfile;
+    private Uri imageUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Set the content view to your activity's layout
-        setContentView(R.layout.fragment_signup_activity); // Ensure this is the correct layout ID
+        setContentView(R.layout.fragment_signup_activity);
 
         // Initialize your views here
         suFullName = findViewById(R.id.suFullName);
@@ -32,8 +39,16 @@ public class SignupActivity extends AppCompatActivity {
         suPassword = findViewById(R.id.suPassword);
         suConfirmPassword = findViewById(R.id.suConfirmPassword);
         buttonConfirm = findViewById(R.id.buttonConfirm);
+        imageViewProfile = findViewById(R.id.imageViewProfile);
+        Button buttonSelectPicture = findViewById(R.id.buttonSelectPicture);
 
-        databaseHelper = new DatabaseHelper(this); // Use 'this' since  in an activity context
+        databaseHelper = new DatabaseHelper(this);
+
+        buttonSelectPicture.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            startActivityForResult(intent, 1000);
+        });
 
         buttonConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -43,6 +58,16 @@ public class SignupActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1000 && resultCode == RESULT_OK && data != null) {
+            imageUri = data.getData();
+            imageViewProfile.setImageURI(imageUri);
+        }
+    }
+
+
     private void signUp() {
         String fullName = suFullName.getText().toString().trim();
         String username = suUsername.getText().toString().trim();
@@ -50,6 +75,8 @@ public class SignupActivity extends AppCompatActivity {
         String confirmEmail = suConfirmEmail.getText().toString().trim();
         String password = suPassword.getText().toString().trim();
         String confirmPassword = suConfirmPassword.getText().toString().trim();
+        String imagePath = imageUri != null ? imageUri.toString() : null; // Convert Uri to String
+
 
         if (!email.equals(confirmEmail)) {
             Toast.makeText(SignupActivity.this, "Emails do not match", Toast.LENGTH_SHORT).show();
@@ -61,16 +88,14 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        // Assuming databaseHelper is already initialized
-        long userId = databaseHelper.addUser(fullName, username, email, password);
+        long userId = databaseHelper.addUser(fullName, username, email, password,imagePath);
 
         if (userId == -1) {
             Toast.makeText(SignupActivity.this, "Signup failed. Please try again.", Toast.LENGTH_LONG).show();
             Log.e("SignupActivity", "Failed to insert new user into the database.");
-            return; // Exit if the user could not be added
+            return;
         }
 
-        // Save the username in SharedPreferences after successful signup
         saveUsername(username);
 
         Toast.makeText(SignupActivity.this, "Signup successful", Toast.LENGTH_SHORT).show();

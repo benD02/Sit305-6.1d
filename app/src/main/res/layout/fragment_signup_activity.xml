@@ -36,7 +36,7 @@
             android:id="@+id/imageViewProfile"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@mipmap/ic_launcher" /> <!-- Placeholder image -->
+            android:src="@mipmap/ic_launcher" /> <!-- placeholder preview image -->
 
         <Button
             android:id="@+id/buttonSelectPicture"

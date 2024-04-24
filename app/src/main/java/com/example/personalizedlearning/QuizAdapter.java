@@ -36,6 +36,13 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
         Quiz quiz = quizList.get(position);
         holder.quizName.setText(quiz.getQuizName());
         holder.quizDescription.setText(quiz.getQuizDescription());
+
+        if (quiz.isCompleted()) {
+            holder.quizStatus.setVisibility(View.VISIBLE);
+            holder.quizStatus.setText("Completed");
+        } else {
+            holder.quizStatus.setVisibility(View.GONE);
+        }
     }
 
 
@@ -49,12 +56,15 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.ViewHolder> {
         public TextView quizDescription;
         public Button startQuizButton;
         OnQuizListener onQuizListener;
+        public TextView quizStatus;
+
 
         public ViewHolder(View itemView, OnQuizListener onQuizListener) {
             super(itemView);
             quizName = itemView.findViewById(R.id.quizName);
             quizDescription = itemView.findViewById(R.id.quizDescription);
             startQuizButton = itemView.findViewById(R.id.startQuizButton);
+            quizStatus = itemView.findViewById(R.id.quizStatus);
             this.onQuizListener = onQuizListener;
             startQuizButton.setOnClickListener(this);
 

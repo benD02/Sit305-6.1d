@@ -3,12 +3,12 @@ import java.io.Serializable;
 import java.util.List;
 
 public class Quiz implements Serializable {
-    private int quizId; // Unique identifier for the quiz
+    private int quizId;
     private String quizName;
     private String quizDescription;
     private List<Question> questions;
 
-    private boolean isCompleted;  // New field to store completion status
+    private boolean isCompleted;
 
 
     // Updated constructor

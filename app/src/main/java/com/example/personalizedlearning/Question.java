@@ -6,7 +6,7 @@ import java.util.List;
 public class Question {
     private String questionText;
     private List<String> options;
-    private int correctAnswerIndex;  // Assuming correct answer is stored as an index
+    private int correctAnswerIndex;
 
     // Constructor
     public Question(String questionText, List<String> options, int correctAnswerIndex) {
@@ -15,22 +15,18 @@ public class Question {
         this.correctAnswerIndex = correctAnswerIndex;
     }
 
-    // Getter for question text
     public String getQuestionText() {
         return questionText;
     }
 
-    // Getter for options
     public List<String> getOptions() {
         return options;
     }
 
-    // Getter for correct answer index
     public int getCorrectAnswerIndex() {
         return correctAnswerIndex;
     }
 
-    // Optional: Getter for correct answer text (if needed)
     public String getCorrectAnswer() {
         return options.get(correctAnswerIndex);
     }

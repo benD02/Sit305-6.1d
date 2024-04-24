@@ -29,7 +29,6 @@ public class InterestActivity extends AppCompatActivity {
         listViewInterests = findViewById(R.id.listViewInterests);
         buttonComplete = findViewById(R.id.buttonComplete);
 
-        // Sample interests, replace with your own
         String[] interests = getResources().getStringArray(R.array.interests_array);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,

@@ -38,7 +38,6 @@ public class QuizFragment extends Fragment {
             String serializedQuiz = getArguments().getString("quiz");
             Gson gson = new Gson();
             Quiz quiz = gson.fromJson(serializedQuiz, new TypeToken<Quiz>(){}.getType());
-            // Now you have your Quiz object with title, description, and questions
         }
     }
 

@@ -19,7 +19,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private String userName;
 
-    private int quizId; // Add this to store quiz ID
+    private int quizId;
 
 
     private Quiz currentQuiz;
@@ -36,7 +36,6 @@ public class QuizActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
 
-        // Initialize UI components
         questionTextView = findViewById(R.id.questionTextView);
         option1Button = findViewById(R.id.option1Button);
         option2Button = findViewById(R.id.option2Button);
@@ -44,7 +43,7 @@ public class QuizActivity extends AppCompatActivity {
         option4Button = findViewById(R.id.option4Button);
         progressBar = findViewById(R.id.progressBar);
 
-        quizId = getIntent().getIntExtra("quizId", -1);  // Defaulting to -1 if not found
+        quizId = getIntent().getIntExtra("quizId", -1);
 
 
         String quizData = getIntent().getStringExtra("quiz_data");
@@ -67,9 +66,8 @@ public class QuizActivity extends AppCompatActivity {
     private void displayCurrentQuestion() {
         Question currentQuestion = currentQuiz.getQuestions().get(currentQuestionIndex);
         questionTextView.setText(currentQuestion.getQuestionText());
-        List<String> options = currentQuestion.getOptions(); // Corrected from getAnswers() to getOptions()
+        List<String> options = currentQuestion.getOptions();
 
-        // Assuming you have a layout that can dynamically add buttons
         LinearLayout optionsLayout = findViewById(R.id.optionsRadioGroup);
         optionsLayout.removeAllViews();  // Clear previous options
         for (int i = 0; i < options.size(); i++) {
@@ -86,14 +84,13 @@ public class QuizActivity extends AppCompatActivity {
 
         }
 
-        // Update progress bar
     }
 
 
 
     public void loadQuizFromDatabase(int quizId) {
         DatabaseHelper db = new DatabaseHelper(this);
-        currentQuiz = db.getQuizById(quizId);  // You would need to implement this method in DatabaseHelper
+        currentQuiz = db.getQuizById(quizId);
         if (currentQuiz != null && !currentQuiz.getQuestions().isEmpty()) {
             displayCurrentQuestion();
         } else {
@@ -124,15 +121,15 @@ public class QuizActivity extends AppCompatActivity {
 
 
     private void finishQuiz() {
-        int totalQuestions = currentQuiz.getQuestions().size(); // Assuming your Quiz class has a method getTotalQuestions()
+        int totalQuestions = currentQuiz.getQuestions().size();
         Toast.makeText(this, "Quiz Completed", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, ResultsActivity.class);
         intent.putExtra("userName", userName);
         intent.putExtra("totalQuestions", totalQuestions);
         intent.putExtra("correctAnswers", correctAnswers);
-        intent.putExtra("quizId", quizId);  // Make sure this is the correct quiz ID
+        intent.putExtra("quizId", quizId);
         startActivity(intent);
-        finish(); // Close the activity
+        finish();
     }
 
 }

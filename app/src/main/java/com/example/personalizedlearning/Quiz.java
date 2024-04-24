@@ -8,12 +8,17 @@ public class Quiz implements Serializable {
     private String quizDescription;
     private List<Question> questions;
 
+    private boolean isCompleted;  // New field to store completion status
+
+
     // Updated constructor
-    public Quiz(int quizId, String quizName, String quizDescription, List<Question> questions) {
+    public Quiz(int quizId, String quizName, String quizDescription, List<Question> questions, boolean isCompleted) {
         this.quizId = quizId;
         this.quizName = quizName;
         this.quizDescription = quizDescription;
         this.questions = questions;
+        this.isCompleted = isCompleted;
+
     }
 
     // Getters and setters
@@ -43,6 +48,14 @@ public class Quiz implements Serializable {
 
     public int getTotalQuestions() {
         return questions != null ? questions.size() : 0;
+    }
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
     }
 }
 

@@ -138,8 +138,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
                 String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
                 String quizTopic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+                boolean isCompleted = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;  // Get completion status
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                quizzes.add(new Quiz(quizId, quizName, quizTopic, questions));  // Updated to include quizId
+                quizzes.add(new Quiz(quizId, quizName, quizTopic, questions, isCompleted));  // Include isCompleted in the constructor
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -243,7 +244,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Quiz> quizzes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         String[] args = {String.valueOf(userId)};
-        Cursor cursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC},
+        Cursor cursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC, COLUMN_QUIZ_COMPLETED},
                 "user_id = ?", args, null, null, null);
 
         if (cursor.moveToFirst()) {
@@ -251,15 +252,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 int quizId = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_ID));
                 String quizName = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_NAME));
                 String topic = cursor.getString(cursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+                boolean isCompleted = cursor.getInt(cursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;
                 List<Question> questions = getQuestionsForQuiz(quizId);
-                // Correctly pass quizId to the Quiz constructor
-                quizzes.add(new Quiz(quizId, quizName, topic, questions));
+                quizzes.add(new Quiz(quizId, quizName, topic, questions, isCompleted));
             } while (cursor.moveToNext());
         }
         cursor.close();
         db.close();
         return quizzes;
     }
+
 
     // Method to fetch questions for a specific quiz
     public List<Question> getQuestionsForQuiz(long quizId) {
@@ -413,19 +415,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Quiz quiz = null;
 
-        // Query to get the Quiz details
-        Cursor quizCursor = db.query(TABLE_QUIZZES, new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC},
-                COLUMN_QUIZ_ID + " = ?", new String[]{String.valueOf(quizId)},
+        // Query to get the Quiz details, including the completion status
+        Cursor quizCursor = db.query(TABLE_QUIZZES,
+                new String[]{COLUMN_QUIZ_ID, COLUMN_QUIZ_NAME, COLUMN_QUIZ_TOPIC, COLUMN_QUIZ_COMPLETED},
+                COLUMN_QUIZ_ID + " = ?",
+                new String[]{String.valueOf(quizId)},
                 null, null, null);
 
         if (quizCursor.moveToFirst()) {
             int retrievedQuizId = quizCursor.getInt(quizCursor.getColumnIndex(COLUMN_QUIZ_ID));  // Retrieve the quiz ID
             String quizName = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_NAME));
             String quizTopic = quizCursor.getString(quizCursor.getColumnIndex(COLUMN_QUIZ_TOPIC));
+            boolean isCompleted = quizCursor.getInt(quizCursor.getColumnIndex(COLUMN_QUIZ_COMPLETED)) == 1;  // Retrieve the completion status
             List<Question> questions = getQuestionsForQuiz(retrievedQuizId);  // Retrieve questions associated with the quiz
 
-            // Create a new Quiz object with all details
-            quiz = new Quiz(retrievedQuizId, quizName, quizTopic, questions);
+            // Create a new Quiz object with all details including the completion status
+            quiz = new Quiz(retrievedQuizId, quizName, quizTopic, questions, isCompleted);
         }
         quizCursor.close();
         db.close();
